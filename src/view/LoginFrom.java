@@ -7,6 +7,7 @@ package view;
 import dao.TaiKhoanDAO;
 import javax.swing.JOptionPane;
 import model.TaiKhoan;
+import view.ManagerForm;
 
 /**
  *
@@ -191,17 +192,18 @@ public class LoginFrom extends javax.swing.JFrame {
         // ĐĂNG NHẬP THÀNH CÔNG
         String role = user.getRole();
         
-        // Hiển thị thông báo trên Console/Terminal
+        // Hiển thị thông báo 
         System.out.println("Đăng nhập thành công! Role: " + role); 
         
-        // 4. KIỂM TRA PHÂN QUYỀN VÀ XỬ LÝ (KHÔNG MỞ FORM)
+        // 4. KIỂM TRA PHÂN QUYỀN VÀ XỬ LÝ 
         if ("Quản lý".equals(role)) {
-            System.out.println("-> Chức năng: Đã xác định vai trò Quản lý.");
-            // Giữ nguyên Form đăng nhập, KHÔNG gọi this.dispose() hoặc new ManagerForm()
+            System.out.println("Chức năng: Đã xác định vai trò Quản lý.");
+            this.dispose();
+            new ManagerForm(user).setVisible(true);            
             
         } else if ("Thu ngân".equals(role)) {
-            System.out.println("-> Chức năng: Đã xác định vai trò Thu ngân.");
-            // Giữ nguyên Form đăng nhập, KHÔNG gọi this.dispose() hoặc new ShiftStartForm()
+            System.out.println("Chức năng: Đã xác định vai trò Thu ngân.");
+           
             
         } else {
             // Xử lý các Role khác
