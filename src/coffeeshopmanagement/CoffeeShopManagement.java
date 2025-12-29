@@ -3,6 +3,7 @@ package coffeeshopmanagement;
 import utils.DBConnection; // Import file kết nối DB
 import view.ManagerForm;   // Import form Quản lý
 import java.sql.Connection;
+import view.LoginFrom;
 
 /**
  *
@@ -27,8 +28,7 @@ public class CoffeeShopManagement {
             return; // Dừng chương trình nếu không kết nối được
         }
         
-        // --- BƯỚC 2: MỞ GIAO DIỆN QUẢN LÝ (MANAGER FORM) ---
-        System.out.println("Dang khoi chay ManagerForm...");
+       
         
         /* Set the Nimbus look and feel (Làm đẹp giao diện nếu có) */
         try {
@@ -46,7 +46,7 @@ public class CoffeeShopManagement {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 // Mở form Quản lý lên
-                new ManagerForm().setVisible(true);
+                new LoginFrom().setVisible(true);
             }
         });
     }

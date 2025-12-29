@@ -3,12 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Temp/CoffeeShopManagement/src/coffeeshopmanagement/CoffeeShopManagement.java</file>
-            <file>file:/C:/Temp/CoffeeShopManagement/src/view/NhanVienJPanel.java</file>
-            <file>file:/C:/Temp/CoffeeShopManagement/src/view/ManagerForm.java</file>
-            <file>file:/C:/Temp/CoffeeShopManagement/src/dao/JpanelLoader.java</file>
-            <file>file:/C:/Temp/CoffeeShopManagement/src/model/NhanVien.java</file>
-            <file>file:/C:/Temp/CoffeeShopManagement/src/dao/NhanVienDAO.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/model/NhanVien.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/coffeeshopmanagement/CoffeeShopManagement.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/view/ManagerForm.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/view/LoginFrom.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/view/ThuNganForm.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/dao/JpanelLoader.java</file>
+            <file>file:/E:/baitap/CoffeeShopManagement/src/view/NhanVienJPanel.java</file>
         </group>
     </open-files>
 </project-private>
