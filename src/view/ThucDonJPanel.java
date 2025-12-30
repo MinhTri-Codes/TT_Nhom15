@@ -377,6 +377,8 @@ private dao.DanhMucDAO dmDAO; // <--- THÊM DÒNG NÀY
                 .addComponent(jLabel15))
         );
 
+        jScrollPane2.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
         tbDanhMuc.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null},
@@ -388,6 +390,7 @@ private dao.DanhMucDAO dmDAO; // <--- THÊM DÒNG NÀY
                 "Mã danh mục", "Tên danh mục", "Số món "
             }
         ));
+        tbDanhMuc.setToolTipText("");
         tbDanhMuc.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 tbDanhMucMouseClicked(evt);
@@ -419,10 +422,10 @@ private dao.DanhMucDAO dmDAO; // <--- THÊM DÒNG NÀY
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -430,12 +433,12 @@ private dao.DanhMucDAO dmDAO; // <--- THÊM DÒNG NÀY
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel14)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 265, Short.MAX_VALUE)))
-                .addGap(103, 103, 103))
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(246, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -492,7 +495,28 @@ String idText = txtTimKiemID.getText().trim();
     }//GEN-LAST:event_txtTimKiemIDActionPerformed
 
     private void btnLamMoiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLamMoiActionPerformed
-        resetForm();        // TODO add your handling code here:
+        // 1. Xóa các ô nhập liệu văn bản
+    txtTenSP.setText("");
+    txtDonGia.setText("");
+    txtIMG_URL.setText("");
+    txtTimKiemID.setText("");
+    
+    // 2. Đưa ComboBox về mục đầu tiên
+    if (cboDanhMuc.getItemCount() > 0) {
+        cboDanhMuc.setSelectedIndex(0);
+    }
+    
+    // 3. Xóa hình ảnh hiển thị trên Label
+    jLabel_IMG.setIcon(null);
+    jLabel_IMG.setText("No Image");
+    
+    // 4. Bỏ chọn dòng trong bảng sản phẩm
+    tbSanPham.clearSelection();
+    
+    // 5. Nạp lại dữ liệu từ DB để đảm bảo bảng hiển thị đủ món (phòng trường hợp đang tìm kiếm)
+    loadDataToTable();
+    
+    JOptionPane.showMessageDialog(this, "Đã làm mới form sản phẩm!");
     }//GEN-LAST:event_btnLamMoiActionPerformed
 
     private void btnSuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSuaActionPerformed
@@ -660,6 +684,16 @@ JFileChooser fileChooser = new JFileChooser();
 
     private void btnLamMoiDMActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLamMoiDMActionPerformed
         // TODO add your handling code here:
+        // 1. Xóa trắng ô tên danh mục
+    txtTenDanhMuc.setText("");
+    
+    // 2. Bỏ chọn dòng trên bảng danh mục
+    tbDanhMuc.clearSelection();
+    
+    // 3. Nạp lại bảng danh mục để cập nhật số lượng món mới nhất
+    loadDanhMucToTable();
+    
+    JOptionPane.showMessageDialog(this, "Đã làm mới form danh mục!");
     }//GEN-LAST:event_btnLamMoiDMActionPerformed
 
     private void tbDanhMucMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbDanhMucMouseClicked
