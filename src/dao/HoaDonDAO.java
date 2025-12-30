@@ -143,14 +143,22 @@ public class HoaDonDAO {
     }
 
     // 5. Thanh toán
-    public void thanhToan(int maHD, double tongTien) {
-        String sql = "UPDATE hoadon SET TrangThai = 'Đã thanh toán', TongTien = ? WHERE MaHD = ?";
+   public void thanhToan(int maHD, double tongTien, String phuongThuc, double tienGiamGia) {
+        // Cập nhật: Tổng tiền, Trạng thái, Phương thức và Ngày giờ thanh toán (NOW)
+        String sql = "UPDATE hoadon SET TrangThai = 'Đã thanh toán', TongTien = ?, PhuongThuc = ?, Discount = ?, NgayLap = NOW() WHERE MaHD = ?";
+        
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            
             ps.setDouble(1, tongTien);
-            ps.setInt(2, maHD);
+            ps.setString(2, phuongThuc); // Lưu 'Tiền mặt' hoặc 'Chuyển khoản'
+            ps.setDouble(3, tienGiamGia); 
+            ps.setInt(4, maHD);
+            
             ps.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
 }

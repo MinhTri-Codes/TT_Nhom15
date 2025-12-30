@@ -22,6 +22,7 @@ public class ThuNganForm extends javax.swing.JFrame {
     HoaDonDAO hdDAO = new HoaDonDAO();
     java.util.List<model.ChiTietHoaDon> currentList = new java.util.ArrayList<>();
     int maBanDangChon = -1;
+    double tienGiamGiaTamTinh = 0;
     DefaultTableModel modelOrder;
     /**
      * Creates new form ThuNganForm
@@ -153,9 +154,13 @@ public class ThuNganForm extends javax.swing.JFrame {
             btn.setBackground(new Color(240, 240, 240));
         }
         btn.addActionListener(e -> {
-            maBanDangChon = b.getMaBan();
-            jLabel1.setText("Đang chọn: " + b.getTenBan());
-            loadOrderCuaBan(maBanDangChon);
+        maBanDangChon = b.getMaBan();
+        jLabel1.setText("Đang chọn: " + b.getTenBan());
+
+        tienGiamGiaTamTinh = 0; // Reset giảm giá khi chọn bàn mới
+        // ---------------------
+        
+        loadOrderCuaBan(maBanDangChon);
         });
         return btn;
     }
@@ -248,19 +253,59 @@ public class ThuNganForm extends javax.swing.JFrame {
             tongTien += ct.getThanhTien();
         }
         lblTongTien.setText("Tổng tiền: " + String.format("%,.0f VND", tongTien));
+        double khachCanTra = tongTien - tienGiamGiaTamTinh;
+        if (tienGiamGiaTamTinh > 0) {
+            lblTongTien.setText("Tổng tiền: " + String.format("%,.0f VNĐ", khachCanTra));
+        } else {
+            lblTongTien.setText("Tổng tiền: " + String.format("%,.0f VNĐ", tongTien));
+        }
     }
 
     void xuLyThanhToan() {
         if (maBanDangChon == -1) return;
         int maHD = hdDAO.getMaHoaDonCho(maBanDangChon);
-        if (maHD != -1 && JOptionPane.showConfirmDialog(this, "Thanh toán?") == JOptionPane.YES_OPTION) {
-            hdDAO.thanhToan(maHD, 0);
-            banDAO.updateTrangThai(maBanDangChon, "Trống");
-            loadDanhSachBan();
-            modelOrder.setRowCount(0);
-            lblTongTien.setText("Tổng: 0 VND");
-            maBanDangChon = -1;
+        if (maHD == -1) return;
+
+        // Tính lại tổng gốc lần cuối cho chắc
+        double tongTienGoc = 0;
+        for (model.ChiTietHoaDon mon : currentList) {
+            tongTienGoc += mon.getThanhTien();
         }
+        
+        if (tongTienGoc == 0) return;
+
+        
+        double khachCanTra = tongTienGoc - tienGiamGiaTamTinh;
+        
+        // Xác nhận thanh toán
+        Object[] options = {"Tiền mặt", "Chuyển khoản", "Hủy"};
+        String msg = "Tổng gốc: " + String.format("%,.0f", tongTienGoc) + 
+                     "\nĐã giảm: -" + String.format("%,.0f", tienGiamGiaTamTinh) +
+                     "\n--------------------------" +
+                     "\nKHÁCH CẦN TRẢ: " + String.format("%,.0f VNĐ", khachCanTra);
+
+        int choice = javax.swing.JOptionPane.showOptionDialog(this, msg, "Chốt đơn",
+                javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE,
+                null, options, options[0]);
+
+        String phuongThuc = "";
+        if (choice == 0) phuongThuc = "Tiền mặt";
+        else if (choice == 1) phuongThuc = "Chuyển khoản";
+        else return;
+
+        // Lưu vào DB
+        hdDAO.thanhToan(maHD, khachCanTra, phuongThuc, tienGiamGiaTamTinh);
+
+        // Reset mọi thứ
+        banDAO.updateTrangThai(maBanDangChon, "Trống");
+        tienGiamGiaTamTinh = 0; // <--- Quan trọng: Reset giảm giá sau khi thanh toán xong
+        loadDanhSachBan();
+        loadOrderCuaBan(maBanDangChon);
+        
+        javax.swing.JOptionPane.showMessageDialog(this, "Tiền đã về túi! (Thu: " + String.format("%,.0f", khachCanTra) + ")");
+        maBanDangChon = -1;
+        jLabel1.setText("Chưa chọn bàn");
+        lblTongTien.setText("Tổng: 0 VNĐ");
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -284,6 +329,7 @@ public class ThuNganForm extends javax.swing.JFrame {
         btnXoaMon = new javax.swing.JButton();
         btnSuaSL = new javax.swing.JButton();
         btnHuyDon = new javax.swing.JButton();
+        btnGiamGia = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -328,6 +374,13 @@ public class ThuNganForm extends javax.swing.JFrame {
         btnHuyDon.setText("Hủy Đơn");
         btnHuyDon.setToolTipText("");
 
+        btnGiamGia.setText("Giảm giá");
+        btnGiamGia.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGiamGiaActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -357,9 +410,11 @@ public class ThuNganForm extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(18, 18, 18)
                         .addComponent(btnXoaMon)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnSuaSL)
-                        .addGap(81, 81, 81)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnSuaSL, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnGiamGia, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnHuyDon)
                         .addGap(25, 25, 25))))
         );
@@ -372,11 +427,11 @@ public class ThuNganForm extends javax.swing.JFrame {
                         .addGap(15, 15, 15)
                         .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 337, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(btnXoaMon)
-                                .addComponent(btnHuyDon))
-                            .addComponent(btnSuaSL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(btnXoaMon)
+                            .addComponent(btnHuyDon)
+                            .addComponent(btnSuaSL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(btnGiamGia))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
                         .addComponent(lblTongTien, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -392,8 +447,53 @@ public class ThuNganForm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnThanhToanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThanhToanActionPerformed
-        // TODO add your handling code here:
+        xuLyThanhToan();
     }//GEN-LAST:event_btnThanhToanActionPerformed
+
+    private void btnGiamGiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGiamGiaActionPerformed
+                                           
+        if (maBanDangChon == -1) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng chọn bàn để áp dụng giảm giá");
+            return;
+        }
+        
+        // 1. Tính tổng tiền gốc hiện tại
+        double tongTienGoc = 0;
+        for (model.ChiTietHoaDon mon : currentList) {
+            tongTienGoc += mon.getThanhTien();
+        }
+        
+        if (tongTienGoc == 0) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Bàn hiện tại chưa có món");
+            return;
+        }
+
+        // 2. Nhập số tiền muốn giảm
+        String input = javax.swing.JOptionPane.showInputDialog(this, 
+            "Tổng gốc: " + String.format("%,.0f VNĐ", tongTienGoc) + 
+            "\nNhập số tiền giảm (VNĐ):", String.format("%.0f", tienGiamGiaTamTinh));
+            
+        if (input != null && !input.isEmpty()) {
+            try {
+                double giamMoi = Double.parseDouble(input);
+                
+                // Kiểm tra không cho giảm quá lố
+                if (giamMoi > tongTienGoc) {
+                    javax.swing.JOptionPane.showMessageDialog(this, "Không nhập quá tiền gốc");
+                    return;
+                }
+                
+                // Lưu vào biến toàn cục
+                tienGiamGiaTamTinh = giamMoi;
+                
+                // 3. Cập nhật lại cái nhãn Tổng tiền cho đẹp
+                double khachCanTra = tongTienGoc - tienGiamGiaTamTinh;
+                lblTongTien.setText("Tổng tiền: " + String.format("%,.0f VNĐ", khachCanTra));
+            } catch (NumberFormatException e) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ");
+            }
+        }
+    }//GEN-LAST:event_btnGiamGiaActionPerformed
 
     /**
      * @param args the command line arguments
@@ -431,6 +531,7 @@ public class ThuNganForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnGiamGia;
     private javax.swing.JButton btnHuyDon;
     private javax.swing.JButton btnSuaSL;
     private javax.swing.JButton btnThanhToan;
