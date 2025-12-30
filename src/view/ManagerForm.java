@@ -61,6 +61,11 @@ public class ManagerForm extends javax.swing.JFrame {
         });
 
         jButton2.setText("Thực đơn");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jButton3.setText("Bàn ăn");
 
@@ -158,6 +163,12 @@ public class ManagerForm extends javax.swing.JFrame {
         jpload.jPanelLoader(Jpanel_Load, jpnv);
         
     }//GEN-LAST:event_btnQlyNhanVienActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        ThucDonJPanel jpnv = new ThucDonJPanel();
+        jpload.jPanelLoader(Jpanel_Load, jpnv);
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
