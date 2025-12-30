@@ -74,6 +74,11 @@ public class ManagerForm extends javax.swing.JFrame {
         });
 
         jButton5.setText("Thông kê hóa đơn");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
 
         jButton6.setText("Thống kê ca làm");
 
@@ -130,7 +135,7 @@ public class ManagerForm extends javax.swing.JFrame {
         );
         Jpanel_LoadLayout.setVerticalGroup(
             Jpanel_LoadLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 455, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -176,6 +181,12 @@ public class ManagerForm extends javax.swing.JFrame {
         BanAnJPanel jpnv = new BanAnJPanel();
         jpload.jPanelLoader(Jpanel_Load, jpnv);
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+        ThongKeJPanel jpnv = new ThongKeJPanel();
+        jpload.jPanelLoader(Jpanel_Load, jpnv);
+    }//GEN-LAST:event_jButton5ActionPerformed
 
     /**
      * @param args the command line arguments

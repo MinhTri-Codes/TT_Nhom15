@@ -20,6 +20,7 @@ import javax.swing.table.DefaultTableModel;
 import model.NhanVien;
 import utils.DBConnection;
 import javax.swing.text.MaskFormatter;
+
 /**
  *
  * 
@@ -61,7 +62,6 @@ public class NhanVienJPanel extends javax.swing.JPanel {
         jLabel3 = new javax.swing.JLabel();
         txtTenNV = new javax.swing.JTextField();
         txtSDT = new javax.swing.JTextField();
-        txtNgaySinh = new javax.swing.JFormattedTextField();
         btnThem = new javax.swing.JButton();
         btnXoa = new javax.swing.JButton();
         btnSua = new javax.swing.JButton();
@@ -74,6 +74,7 @@ public class NhanVienJPanel extends javax.swing.JPanel {
         btnReset = new javax.swing.JButton();
         jLabel9 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
+        jdcNgaySinh = new com.toedter.calendar.JDateChooser();
         jScrollPane1 = new javax.swing.JScrollPane();
         tbNhanVien = new javax.swing.JTable();
         jLabel5 = new javax.swing.JLabel();
@@ -141,13 +142,6 @@ public class NhanVienJPanel extends javax.swing.JPanel {
         });
 
         txtSDT.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-
-        txtNgaySinh.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        txtNgaySinh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtNgaySinhActionPerformed(evt);
-            }
-        });
 
         btnThem.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
         btnThem.setText("Thêm");
@@ -221,7 +215,6 @@ public class NhanVienJPanel extends javax.swing.JPanel {
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(txtTenNV)
                             .addComponent(txtSDT)
-                            .addComponent(txtNgaySinh)
                             .addComponent(cboRole, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(txtTaiKhoan)
                             .addGroup(jPanel2Layout.createSequentialGroup()
@@ -238,7 +231,8 @@ public class NhanVienJPanel extends javax.swing.JPanel {
                                     .addComponent(btnReset, javax.swing.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
                                     .addGroup(jPanel2Layout.createSequentialGroup()
                                         .addComponent(jButton1)
-                                        .addGap(0, 0, Short.MAX_VALUE))))))
+                                        .addGap(0, 0, Short.MAX_VALUE))))
+                            .addComponent(jdcNgaySinh, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(jLabel9)))
@@ -255,14 +249,11 @@ public class NhanVienJPanel extends javax.swing.JPanel {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(txtSDT, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel2))
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGap(10, 10, 10)
-                        .addComponent(txtNgaySinh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jLabel3)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel3)
+                    .addComponent(jdcNgaySinh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(10, 10, 10)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cboRole, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel6))
@@ -335,7 +326,7 @@ public class NhanVienJPanel extends javax.swing.JPanel {
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(83, Short.MAX_VALUE))
+                .addContainerGap(78, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -351,34 +342,22 @@ public class NhanVienJPanel extends javax.swing.JPanel {
         String taiKhoan = txtTaiKhoan.getText().trim();
         String matKhau = txtMatKhau.getText().trim();
 
-        // Kiểm tra trống
-        if (tenNV.isEmpty() || taiKhoan.isEmpty() || matKhau.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin bắt buộc!");
+        // Lấy ngày trực tiếp từ JDateChooser
+        java.util.Date ngaySinh = jdcNgaySinh.getDate(); 
+
+        if (tenNV.isEmpty() || ngaySinh == null || taiKhoan.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin và chọn ngày sinh!");
             return;
         }
 
-        // KIỂM TRA TRÙNG TÀI KHOẢN (Rất quan trọng)
-        dao.TaiKhoanDAO tkDAO = new dao.TaiKhoanDAO();
-        if (tkDAO.isTenDangNhapExists(taiKhoan)) {
-            JOptionPane.showMessageDialog(this, "Tên đăng nhập này đã tồn tại! Vui lòng chọn tên khác.");
-            return;
-        }
-
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        java.util.Date ngaySinh = sdf.parse(txtNgaySinh.getText());
-
-        // Truyền đủ 7 tham số vào Constructor
         NhanVien nv = new NhanVien(0, tenNV, sdt, ngaySinh, role, taiKhoan, matKhau); 
-
         if (nhanvienDAO.addNhanVien(nv, taiKhoan, matKhau)) {
             JOptionPane.showMessageDialog(this, "Thêm thành công!");
             loadDataToTable();
             resetForm();
-        } else {
-            JOptionPane.showMessageDialog(this, "Thêm thất bại! Kiểm tra lại kết nối hoặc dữ liệu.");
         }
     } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Lỗi định dạng ngày (dd-mm-yyyy) hoặc dữ liệu!");
+        JOptionPane.showMessageDialog(this, "Lỗi dữ liệu: " + e.getMessage());
     }
     }//GEN-LAST:event_btnThemActionPerformed
 
@@ -411,7 +390,7 @@ public class NhanVienJPanel extends javax.swing.JPanel {
             String matKhau = txtMatKhau.getText().trim(); // Cho phép sửa pass tại đây
 
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-            Date ngaySinh = sdf.parse(txtNgaySinh.getText());
+            java.util.Date ngaySinh = jdcNgaySinh.getDate();
 
             // SỬA LỖI: Truyền đủ 7 tham số bao gồm cả taiKhoan và matKhau
             NhanVien nv = new NhanVien(maNV, tenNV, sdt, ngaySinh, role, taiKhoan, matKhau);
@@ -442,45 +421,69 @@ public class NhanVienJPanel extends javax.swing.JPanel {
         NhanVien nv = nhanvienDAO.getNhanVienById(maNV); 
 
         if (nv != null) {
+            // Đổ dữ liệu lên Form
             txtTenNV.setText(nv.getTenNV());
             txtSDT.setText(nv.getSdt());
             
-            // 1. Xử lý Ngày sinh
+            // RÀO LỖI NGÀY SINH: Kiểm tra null trước khi setDate
             if (nv.getNgaySinh() != null) {
-                txtNgaySinh.setText(dateFormat.format(nv.getNgaySinh())); 
+                jdcNgaySinh.setDate(nv.getNgaySinh());
+            } else {
+                jdcNgaySinh.setDate(null);
             }
             
-            // 2. TỰ ĐỘNG CHỌN VAI TRÒ (Dòng quan trọng nhất)
-            // Giả sử tên ComboBox của bạn là cboRole
             if (nv.getRole() != null) {
                 cboRole.setSelectedItem(nv.getRole()); 
             }
             
+            txtTaiKhoan.setText(nv.getTenDangNhap() != null ? nv.getTenDangNhap() : "");
+            txtMatKhau.setText(nv.getMatKhau() != null ? nv.getMatKhau() : "");
+            txtTaiKhoan.setEditable(false);
+
+            // TỰ ĐỘNG CHỌN VÀ CUỘN BẢNG
+            for (int i = 0; i < tbNhanVien.getRowCount(); i++) {
+                // Ép kiểu về Integer để so sánh chính xác
+                int idTrenBang = Integer.parseInt(tbNhanVien.getValueAt(i, 0).toString());
+                if (idTrenBang == maNV) {
+                    tbNhanVien.setRowSelectionInterval(i, i);
+                    // Cuộn màn hình tới dòng đó
+                    tbNhanVien.scrollRectToVisible(tbNhanVien.getCellRect(i, 0, true));
+                    break;
+                }
+            }
         } else {
-            JOptionPane.showMessageDialog(this, "Không tìm thấy ID: " + timID);
+            JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên ID: " + timID);
             resetForm();
         }
     } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(this, "ID phải là số!");
+        JOptionPane.showMessageDialog(this, "Mã nhân viên phải là con số!");
     }
     }//GEN-LAST:event_btnTimKiemIDActionPerformed
 
     private void tbNhanVienMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbNhanVienMouseClicked
-       int selectedRow = tbNhanVien.getSelectedRow();
+      int selectedRow = tbNhanVien.getSelectedRow();
     if (selectedRow >= 0) {
         txtTenNV.setText(tableModel.getValueAt(selectedRow, 1).toString());
         txtSDT.setText(tableModel.getValueAt(selectedRow, 2).toString());
-        txtNgaySinh.setText(tableModel.getValueAt(selectedRow, 3).toString());
+        
+        // RÀO LỖI: Xử lý parse ngày sinh từ bảng
+        try {
+            Object objNgay = tableModel.getValueAt(selectedRow, 3);
+            if (objNgay != null && !objNgay.toString().isEmpty()) {
+                // Dùng đúng format dd-MM-yyyy để khớp với bảng
+                Date date = new SimpleDateFormat("dd-MM-yyyy").parse(objNgay.toString());
+                jdcNgaySinh.setDate(date);
+            } else {
+                jdcNgaySinh.setDate(null);
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi parse ngày: " + e.getMessage());
+            jdcNgaySinh.setDate(null); // Nếu lỗi thì để trống lịch
+        }
+
         cboRole.setSelectedItem(tableModel.getValueAt(selectedRow, 4).toString());
-        
-        // Đổ dữ liệu tài khoản và mật khẩu lên textfield
-        Object user = tableModel.getValueAt(selectedRow, 5);
-        Object pass = tableModel.getValueAt(selectedRow, 6);
-        
-        txtTaiKhoan.setText(user != null ? user.toString() : "");
-        txtMatKhau.setText(pass != null ? pass.toString() : "");
-        
-        // Vô hiệu hóa ô tài khoản khi sửa (thường không cho sửa username)
+        txtTaiKhoan.setText(tableModel.getValueAt(selectedRow, 5).toString());
+        txtMatKhau.setText(tableModel.getValueAt(selectedRow, 6).toString());
         txtTaiKhoan.setEditable(false); 
     }
     }//GEN-LAST:event_tbNhanVienMouseClicked
@@ -488,10 +491,6 @@ public class NhanVienJPanel extends javax.swing.JPanel {
     private void txtTimKiemIDActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtTimKiemIDActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtTimKiemIDActionPerformed
-
-    private void txtNgaySinhActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNgaySinhActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtNgaySinhActionPerformed
 
     private void btnResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnResetActionPerformed
 int selectedRow = tbNhanVien.getSelectedRow();
@@ -535,9 +534,9 @@ resetForm();        // TODO add your handling code here:
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
+    private com.toedter.calendar.JDateChooser jdcNgaySinh;
     private javax.swing.JTable tbNhanVien;
     private javax.swing.JTextField txtMatKhau;
-    private javax.swing.JFormattedTextField txtNgaySinh;
     private javax.swing.JTextField txtSDT;
     private javax.swing.JTextField txtTaiKhoan;
     private javax.swing.JTextField txtTenNV;
@@ -574,16 +573,12 @@ resetForm();        // TODO add your handling code here:
    private void resetForm() {
     txtTenNV.setText("");
     txtSDT.setText("");
-    txtNgaySinh.setText("");
+    jdcNgaySinh.setDate(null); // Xóa trắng lịch
     txtTaiKhoan.setText("");
     txtMatKhau.setText("");
     txtTimKiemID.setText("");
     cboRole.setSelectedIndex(0);
-    
-    // QUAN TRỌNG: Mở khóa lại ô Tài khoản để nhập nhân viên mới
     txtTaiKhoan.setEditable(true); 
-    
-    // Bỏ chọn dòng trên bảng (nếu có)
     tbNhanVien.clearSelection();
 }
 }
