@@ -206,7 +206,12 @@ public class LoginFrom extends javax.swing.JFrame {
            this.dispose();
             new ThuNganForm(user).setVisible(true);  
             
-        } else {
+        } else if (role.equalsIgnoreCase("Pha chế")) {
+                System.out.println("Chức năng: Đã xác định vai trò Pha Chế.");
+                new view.PhaCheForm().setVisible(true);
+                this.dispose();
+        }
+        else {
             // Xử lý các Role khác
             JOptionPane.showMessageDialog(this, "Vai trò không xác định.", "Lỗi Phân quyền", JOptionPane.WARNING_MESSAGE);
         }
