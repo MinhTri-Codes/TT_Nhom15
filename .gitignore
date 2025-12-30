@@ -1,12 +1,1 @@
-# Chặn thư mục build (thủ phạm gây lỗi nãy giờ)
-/build/
-
-# Chặn thư mục dist (file xuất bản)
 /dist/
-
-# Chặn cấu hình riêng tư của NetBeans (mỗi máy mỗi khác, không nên share)
-/nbproject/private/
-
-# Chặn file rác hệ điều hành (nếu có)
-**/.DS_Store
-**/Thumbs.db

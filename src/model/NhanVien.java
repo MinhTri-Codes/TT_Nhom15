@@ -1,63 +1,50 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package model;
 
 import java.util.Date;
 
-/**
- *
- * @author lengu
- */
 public class NhanVien {
-       private int maNV;
+    private int maNV;
     private String tenNV;
     private String sdt;
     private Date ngaySinh;
-
+    private int maTK;    
+    private String role; 
     
+    // THÊM 2 TRƯỜNG NÀY VÀO ĐỂ HẾT LỖI "CANNOT FIND SYMBOL"
+    private String tenDangNhap;
+    private String matKhau;
+
     public NhanVien() {
     }
 
-
-    public NhanVien(int maNV, String tenNV, String sdt, Date ngaySinh) {
+    // Cập nhật Constructor đầy đủ để nhận thêm 2 trường mới
+    public NhanVien(int maNV, String tenNV, String sdt, Date ngaySinh, String role, String tenDangNhap, String matKhau) {
         this.maNV = maNV;
         this.tenNV = tenNV;
         this.sdt = sdt;
         this.ngaySinh = ngaySinh;
+        this.role = role;
+        this.tenDangNhap = tenDangNhap;
+        this.matKhau = matKhau;
     }
 
- 
-    public int getMaNV() {
-        return maNV;
-    }
+    // --- THÊM GETTER/SETTER CHO 2 TRƯỜNG MỚI ---
+    public String getTenDangNhap() { return tenDangNhap; }
+    public void setTenDangNhap(String tenDangNhap) { this.tenDangNhap = tenDangNhap; }
 
-    public void setMaNV(int maNV) {
-        this.maNV = maNV;
-    }
+    public String getMatKhau() { return matKhau; }
+    public void setMatKhau(String matKhau) { this.matKhau = matKhau; }
 
-    public String getTenNV() {
-        return tenNV;
-    }
-
-    public void setTenNV(String tenNV) {
-        this.tenNV = tenNV;
-    }
-
-    public String getSdt() {
-        return sdt;
-    }
-
-    public void setSdt(String sdt) {
-        this.sdt = sdt;
-    }
-
-    public Date getNgaySinh() {
-        return ngaySinh;
-    }
-
-    public void setNgaySinh(Date ngaySinh) {
-        this.ngaySinh = ngaySinh;
-    }
-}   
+    // (Các Getter/Setter cũ giữ nguyên...)
+    public int getMaNV() { return maNV; }
+    public void setMaNV(int maNV) { this.maNV = maNV; }
+    public String getTenNV() { return tenNV; }
+    public void setTenNV(String tenNV) { this.tenNV = tenNV; }
+    public String getSdt() { return sdt; }
+    public void setSdt(String sdt) { this.sdt = sdt; }
+    public Date getNgaySinh() { return ngaySinh; }
+    public void setNgaySinh(Date ngaySinh) { this.ngaySinh = ngaySinh; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+}

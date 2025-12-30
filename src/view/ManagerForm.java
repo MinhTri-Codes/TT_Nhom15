@@ -4,11 +4,13 @@
  */
 package view;
 import dao.JpanelLoader;
+import model.TaiKhoan;
 /**
  *
- * @author lehoa
+ * 
  */
 public class ManagerForm extends javax.swing.JFrame {
+    private TaiKhoan loggedInUser;
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ManagerForm.class.getName());
 
@@ -16,13 +18,18 @@ public class ManagerForm extends javax.swing.JFrame {
      * Creates new form ManagerForm
      */
     JpanelLoader jpload = new JpanelLoader();
-    public ManagerForm() {
+    public ManagerForm(TaiKhoan user) {
+        
         
         initComponents();
-        
+        this.loggedInUser = user;
+        this.setTitle("Quản Lý Hệ Thống - Chào mừng: " + user.getTenDangNhap());
         this.setExtendedState(MAXIMIZED_BOTH);
     }
-
+    public ManagerForm() {
+        initComponents();
+        this.setExtendedState(MAXIMIZED_BOTH);
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -33,7 +40,7 @@ public class ManagerForm extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
-        jButton1 = new javax.swing.JButton();
+        btnQlyNhanVien = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
@@ -46,14 +53,19 @@ public class ManagerForm extends javax.swing.JFrame {
 
         jPanel1.setBackground(new java.awt.Color(51, 204, 255));
 
-        jButton1.setText("Nhân viên");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnQlyNhanVien.setText("Nhân viên");
+        btnQlyNhanVien.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnQlyNhanVienActionPerformed(evt);
             }
         });
 
         jButton2.setText("Thực đơn");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jButton3.setText("Bàn ăn");
 
@@ -70,7 +82,7 @@ public class ManagerForm extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnQlyNhanVien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -82,7 +94,7 @@ public class ManagerForm extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnQlyNhanVien, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -144,13 +156,19 @@ public class ManagerForm extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void btnQlyNhanVienActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQlyNhanVienActionPerformed
         // Load NhanVienjPanel
         
-        NhanVienJPanel nv = new NhanVienJPanel();
-        jpload.jPanelLoader(Jpanel_Load, nv);
+        NhanVienJPanel jpnv = new NhanVienJPanel();
+        jpload.jPanelLoader(Jpanel_Load, jpnv);
         
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_btnQlyNhanVienActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        ThucDonJPanel jpnv = new ThucDonJPanel();
+        jpload.jPanelLoader(Jpanel_Load, jpnv);
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -179,7 +197,7 @@ public class ManagerForm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel Jpanel_Load;
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton btnQlyNhanVien;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
