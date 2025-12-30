@@ -203,7 +203,8 @@ public class LoginFrom extends javax.swing.JFrame {
             
         } else if ("Thu ngân".equals(role)) {
             System.out.println("Chức năng: Đã xác định vai trò Thu ngân.");
-           
+           this.dispose();
+            new ThuNganForm(user).setVisible(true);  
             
         } else {
             // Xử lý các Role khác
