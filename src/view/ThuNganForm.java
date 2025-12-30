@@ -20,7 +20,7 @@ public class ThuNganForm extends javax.swing.JFrame {
     BanDAO banDAO = new BanDAO();
     SanPhamDAO spDAO = new SanPhamDAO();
     HoaDonDAO hdDAO = new HoaDonDAO();
-
+    java.util.List<model.ChiTietHoaDon> currentList = new java.util.ArrayList<>();
     int maBanDangChon = -1;
     DefaultTableModel modelOrder;
     /**
@@ -56,7 +56,62 @@ public class ThuNganForm extends javax.swing.JFrame {
                 loadThucDon();
             }
         });
+        btnXoaMon.addActionListener(e -> {
+            int row = tblOrder.getSelectedRow();
+            if (row == -1) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Chọn món cần xóa đi ní!");
+                return;
+            }
+            
+            // Lấy món từ danh sách dựa vào dòng đang chọn
+            model.ChiTietHoaDon mon = currentList.get(row);
+            int maHD = hdDAO.getMaHoaDonCho(maBanDangChon);
+            
+            if (javax.swing.JOptionPane.showConfirmDialog(this, "Chắc chắn xóa món " + mon.getTenSP() + "?") == 0) {
+                hdDAO.xoaMon(maHD, mon.getMaSP());
+                loadOrderCuaBan(maBanDangChon); // Load lại bảng
+            }
+        });
 
+        // 2. Nút SỬA SỐ LƯỢNG
+        btnSuaSL.addActionListener(e -> {
+            int row = tblOrder.getSelectedRow();
+            if (row == -1) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Chọn món cần sửa số lượng!");
+                return;
+            }
+            
+            model.ChiTietHoaDon mon = currentList.get(row);
+            int maHD = hdDAO.getMaHoaDonCho(maBanDangChon);
+            
+            // Hiện hộp thoại nhập số
+            String input = javax.swing.JOptionPane.showInputDialog(this, "Nhập số lượng mới cho " + mon.getTenSP() + ":", mon.getSoLuong());
+            if (input != null && !input.isEmpty()) {
+                try {
+                    int slMoi = Integer.parseInt(input);
+                    hdDAO.updateSoLuong(maHD, mon.getMaSP(), slMoi);
+                    loadOrderCuaBan(maBanDangChon);
+                } catch (NumberFormatException ex) {
+                    javax.swing.JOptionPane.showMessageDialog(this, "Nhập số dùm cái!");
+                }
+            }
+        });
+
+        // 3. Nút HỦY ĐƠN (Xóa sạch bàn làm lại)
+        btnHuyDon.addActionListener(e -> {
+            if (maBanDangChon == -1) return;
+            int maHD = hdDAO.getMaHoaDonCho(maBanDangChon);
+            if (maHD == -1) return;
+
+            if (javax.swing.JOptionPane.showConfirmDialog(this, "BẠN CÓ CHẮC MUỐN HỦY HẾT ĐƠN BÀN NÀY KHÔNG?\nHành động này không thể hoàn tác!", "Cảnh báo hủy đơn", javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION) {
+                hdDAO.huyDon(maHD); // Xóa sạch trong DB
+                banDAO.updateTrangThai(maBanDangChon, "Trống"); // Trả bàn về màu xanh
+                
+                loadDanhSachBan(); // Vẽ lại nút bàn
+                loadOrderCuaBan(maBanDangChon); // Xóa trắng bảng
+                javax.swing.JOptionPane.showMessageDialog(this, "Đã hủy đơn thành công!");
+            }
+        });
         // 3. Định dạng bảng và label
         tblOrder.setRowHeight(35);
         lblTongTien.setFont(new Font("Arial", Font.BOLD, 22));
@@ -172,17 +227,27 @@ public class ThuNganForm extends javax.swing.JFrame {
     void loadOrderCuaBan(int maBan) {
         modelOrder.setRowCount(0);
         int maHD = hdDAO.getMaHoaDonCho(maBan);
+        
         if (maHD == -1) {
-            lblTongTien.setText("Tổng: 0 VND");
+            lblTongTien.setText("Tổng tiền: 0 VND");
+            currentList.clear(); // Xóa danh sách tạm
             return;
         }
-        List<ChiTietHoaDon> list = hdDAO.getChiTietHoaDon(maHD);
-        double tong = 0;
-        for (ChiTietHoaDon ct : list) {
-            modelOrder.addRow(new Object[]{ct.getTenSP(), ct.getSoLuong(), String.format("%,.0f", ct.getDonGia()), String.format("%,.0f", ct.getThanhTien())});
-            tong += ct.getThanhTien();
+        
+        // QUAN TRỌNG: Lưu danh sách lấy từ DB vào biến toàn cục
+        currentList = hdDAO.getChiTietHoaDon(maHD);
+        
+        double tongTien = 0;
+        for (model.ChiTietHoaDon ct : currentList) {
+            modelOrder.addRow(new Object[]{
+                ct.getTenSP(),
+                ct.getSoLuong(),
+                String.format("%,.0f", ct.getDonGia()),
+                String.format("%,.0f", ct.getThanhTien())
+            });
+            tongTien += ct.getThanhTien();
         }
-        lblTongTien.setText("Tổng: " + String.format("%,.0f VND", tong));
+        lblTongTien.setText("Tổng tiền: " + String.format("%,.0f VND", tongTien));
     }
 
     void xuLyThanhToan() {
@@ -216,6 +281,9 @@ public class ThuNganForm extends javax.swing.JFrame {
         lblTongTien = new java.awt.Label();
         btnThanhToan = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        btnXoaMon = new javax.swing.JButton();
+        btnSuaSL = new javax.swing.JButton();
+        btnHuyDon = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -253,6 +321,13 @@ public class ThuNganForm extends javax.swing.JFrame {
         jLabel1.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
         jLabel1.setText("Chưa chọn bàn");
 
+        btnXoaMon.setText("Xóa Món");
+
+        btnSuaSL.setText("Sửa số lượng");
+
+        btnHuyDon.setText("Hủy Đơn");
+        btnHuyDon.setToolTipText("");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -264,35 +339,52 @@ public class ThuNganForm extends javax.swing.JFrame {
                     .addComponent(jScrollPane2))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(78, 78, 78)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(layout.createSequentialGroup()
+                                .addGap(78, 78, 78)
+                                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lblTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(74, 74, 74)
                                 .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 264, Short.MAX_VALUE))))
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addContainerGap())
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addGap(18, 18, 18)
+                        .addComponent(btnXoaMon)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnSuaSL)
+                        .addGap(81, 81, 81)
+                        .addComponent(btnHuyDon)
+                        .addGap(25, 25, 25))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jLabel1)
-                .addGap(15, 15, 15)
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
-                .addComponent(lblTongTien, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnThanhToan)
-                .addGap(0, 29, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 96, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addGap(15, 15, 15)
+                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 337, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(btnXoaMon)
+                                .addComponent(btnHuyDon))
+                            .addComponent(btnSuaSL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
+                        .addComponent(lblTongTien, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnThanhToan))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 96, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -339,7 +431,10 @@ public class ThuNganForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnHuyDon;
+    private javax.swing.JButton btnSuaSL;
     private javax.swing.JButton btnThanhToan;
+    private javax.swing.JButton btnXoaMon;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;

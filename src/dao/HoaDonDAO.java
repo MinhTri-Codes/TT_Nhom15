@@ -74,9 +74,11 @@ public class HoaDonDAO {
     }
 
     // 4. Lấy danh sách món của hóa đơn để hiển thị lên bảng
+    // --- 1. Sửa lại hàm lấy danh sách (để lấy luôn MaSP) ---
     public List<ChiTietHoaDon> getChiTietHoaDon(int maHD) {
         List<ChiTietHoaDon> list = new ArrayList<>();
-        String sql = "SELECT sp.TenSP, cthd.SoLuong, cthd.DonGia " +
+        // Nhớ SELECT thêm cthd.MaSP
+        String sql = "SELECT cthd.MaSP, sp.TenSP, cthd.SoLuong, cthd.DonGia " +
                      "FROM chitiethoadon cthd " +
                      "JOIN sanpham sp ON cthd.MaSP = sp.MaSP " +
                      "WHERE cthd.MaHD = ?";
@@ -85,10 +87,59 @@ public class HoaDonDAO {
             ps.setInt(1, maHD);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                list.add(new ChiTietHoaDon(rs.getString("TenSP"), rs.getInt("SoLuong"), rs.getDouble("DonGia")));
+                list.add(new ChiTietHoaDon(
+                    rs.getInt("MaSP"), // Lấy MaSP về
+                    rs.getString("TenSP"), 
+                    rs.getInt("SoLuong"), 
+                    rs.getDouble("DonGia")
+                ));
             }
         } catch (Exception e) { e.printStackTrace(); }
         return list;
+    }
+
+    // --- 2. Xóa 1 món khỏi hóa đơn ---
+    public void xoaMon(int maHD, int maSP) {
+        String sql = "DELETE FROM chitiethoadon WHERE MaHD = ? AND MaSP = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maHD);
+            ps.setInt(2, maSP);
+            ps.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    // --- 3. Cập nhật số lượng món ---
+    public void updateSoLuong(int maHD, int maSP, int soLuongMoi) {
+        if (soLuongMoi <= 0) {
+            xoaMon(maHD, maSP); // Nếu sửa thành 0 thì xóa luôn
+            return;
+        }
+        String sql = "UPDATE chitiethoadon SET SoLuong = ? WHERE MaHD = ? AND MaSP = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, soLuongMoi);
+            ps.setInt(2, maHD);
+            ps.setInt(3, maSP);
+            ps.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    // --- 4. Hủy toàn bộ đơn hàng (Xóa Hóa Đơn) ---
+    public void huyDon(int maHD) {
+        try (Connection conn = DBConnection.getConnection()) {
+            // Bước 1: Xóa chi tiết trước (vì ràng buộc khóa ngoại)
+            String sqlDelCT = "DELETE FROM chitiethoadon WHERE MaHD = ?";
+            PreparedStatement ps1 = conn.prepareStatement(sqlDelCT);
+            ps1.setInt(1, maHD);
+            ps1.executeUpdate();
+
+            // Bước 2: Xóa hóa đơn
+            String sqlDelHD = "DELETE FROM hoadon WHERE MaHD = ?";
+            PreparedStatement ps2 = conn.prepareStatement(sqlDelHD);
+            ps2.setInt(1, maHD);
+            ps2.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     // 5. Thanh toán
@@ -101,4 +152,5 @@ public class HoaDonDAO {
             ps.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }
+    
 }
