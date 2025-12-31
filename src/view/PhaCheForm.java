@@ -1,38 +1,54 @@
 
 package view;
 
+import dao.CaLamViecDAO;
 import dao.PhaCheDAO;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import java.util.Timer;
 import java.util.TimerTask;
+import model.TaiKhoan;
 
 public class PhaCheForm extends javax.swing.JFrame {
     PhaCheDAO dao = new PhaCheDAO();
+    CaLamViecDAO caDAO = new CaLamViecDAO(); // Khởi tạo DAO quản lý ca
     DefaultTableModel model;
     List<PhaCheDAO.MonCanLam> currentList;
+    private TaiKhoan currentUser; // Biến lưu trữ người dùng đang đăng nhập
     /**
      * Creates new form PhaCheForm
      */
     public PhaCheForm() {
         initComponents();
+        setupForm();
+    }
+    public PhaCheForm(TaiKhoan user) {
+        this.currentUser = user;
+        initComponents();
+        setupForm();
+        if (user != null) {
+            jLabel1.setText("PHA CHẾ: " + user.getTenDangNhap());
+        }
+    }
+    private void setupForm() {
         // Cấu hình bảng
         model = (DefaultTableModel) tblPhaChe.getModel();
         
         // Load lần đầu
         loadData();
         
-        // TỰ ĐỘNG CẬP NHẬT SAU MỖI 5 GIÂY (Auto Refresh)
-        // Giúp pha chế không cần bấm nút F5 liên tục
+        // TỰ ĐỘNG CẬP NHẬT SAU MỖI 5 GIÂY
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 loadData();
             }
-        }, 5000, 5000); // 5000ms = 5 giây
+        }, 5000, 5000);
+        
         initEvents();
+        setLocationRelativeTo(null); // Canh giữa màn hình
     }
     void loadData() {
         // Lưu vị trí dòng đang chọn để sau khi refresh không bị mất selection
@@ -102,6 +118,7 @@ public class PhaCheForm extends javax.swing.JFrame {
         tblPhaChe = new javax.swing.JTable();
         btnXong = new javax.swing.JButton();
         btnNhanDon = new javax.swing.JButton();
+        btnDongCa = new javax.swing.JButton();
 
         jButton2.setText("jButton1");
 
@@ -126,27 +143,44 @@ public class PhaCheForm extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(tblPhaChe);
 
+        btnXong.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
         btnXong.setText("Hoàn tất");
 
+        btnNhanDon.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
         btnNhanDon.setText("Nhận đơn");
+
+        btnDongCa.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
+        btnDongCa.setText("Đóng ca");
+        btnDongCa.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDongCaActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(btnNhanDon, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnXong, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnDongCa))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(btnNhanDon, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnXong, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnDongCa))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -158,6 +192,42 @@ public class PhaCheForm extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnDongCaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDongCaActionPerformed
+        // TODO add your handling code here:
+        if (currentUser == null) {
+            this.dispose();
+            new LoginFrom().setVisible(true);
+            return;
+        }
+
+        // 1. Xác nhận đóng ca
+        int confirm = JOptionPane.showConfirmDialog(this, 
+                "Xác nhận kết thúc ca làm việc và đăng xuất?", 
+                "Đóng ca", JOptionPane.YES_NO_OPTION);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            // 2. Tìm mã nhân viên và mã ca hiện tại
+            int maNV = caDAO.getMaNVByMaTK(currentUser.getMaTK());
+            int maCa = caDAO.getMaCaHienTai(maNV);
+
+            if (maCa != -1) {
+                // 3. Thực hiện cập nhật giờ kết thúc vào DB
+                // Pha chế không cầm tiền nên Tiền mặt, Chuyển khoản, Doanh thu = 0
+                if (caDAO.dongCa(maCa, 0, 0, 0)) {
+                    JOptionPane.showMessageDialog(this, "Đã đóng ca thành công.");
+                    this.dispose();
+                    new LoginFrom().setVisible(true);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Lỗi: Không thể cập nhật thông tin đóng ca!");
+                }
+            } else {
+                // Nếu không tìm thấy ca đang mở thì chỉ cần thoát ra
+                this.dispose();
+                new LoginFrom().setVisible(true);
+            }
+        }
+    }//GEN-LAST:event_btnDongCaActionPerformed
 
     /**
      * @param args the command line arguments
@@ -195,6 +265,7 @@ public class PhaCheForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnDongCa;
     private javax.swing.JButton btnNhanDon;
     private javax.swing.JButton btnXong;
     private javax.swing.JButton jButton2;

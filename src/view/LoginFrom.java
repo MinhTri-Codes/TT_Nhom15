@@ -4,8 +4,10 @@
  */
 package view;
 
+import dao.CaLamViecDAO;
 import dao.TaiKhoanDAO;
 import javax.swing.JOptionPane;
+import model.CaLamViec;
 import model.TaiKhoan;
 import view.ManagerForm;
 
@@ -173,53 +175,61 @@ public class LoginFrom extends javax.swing.JFrame {
     }//GEN-LAST:event_txtTaiKhoanActionPerformed
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-// TODO add your handling code here:
-// 1. Lấy dữ liệu từ giao diện
-    String tenDangNhap = txtTaiKhoan.getText();
-    String matKhau = new String(txtMatKhau.getPassword()); 
+String tenDangNhap = txtTaiKhoan.getText();
+        String matKhau = new String(txtMatKhau.getPassword()); 
 
-    // 2. Kiểm tra tính hợp lệ cơ bản
-    if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ Tài khoản và Mật khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    
-    // 3. Gọi DAO để kiểm tra đăng nhập
-    TaiKhoanDAO tkDAO = new TaiKhoanDAO();
-    TaiKhoan user = tkDAO.checkLogin(tenDangNhap, matKhau);
-
-    if (user != null) {
-        // ĐĂNG NHẬP THÀNH CÔNG
-        String role = user.getRole();
-        
-        // Hiển thị thông báo 
-        System.out.println("Đăng nhập thành công! Role: " + role); 
-        
-        // 4. KIỂM TRA PHÂN QUYỀN VÀ XỬ LÝ 
-        if ("Quản lý".equals(role)) {
-            System.out.println("Chức năng: Đã xác định vai trò Quản lý.");
-            this.dispose();
-            new ManagerForm(user).setVisible(true);            
-            
-        } else if ("Thu ngân".equals(role)) {
-            System.out.println("Chức năng: Đã xác định vai trò Thu ngân.");
-           this.dispose();
-            new ThuNganForm(user).setVisible(true);  
-            
-        } else if (role.equalsIgnoreCase("Pha chế")) {
-                System.out.println("Chức năng: Đã xác định vai trò Pha Chế.");
-                new view.PhaCheForm().setVisible(true);
-                this.dispose();
-        }
-        else {
-            // Xử lý các Role khác
-            JOptionPane.showMessageDialog(this, "Vai trò không xác định.", "Lỗi Phân quyền", JOptionPane.WARNING_MESSAGE);
+        // Kiểm tra dữ liệu đầu vào
+        if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ Tài khoản và Mật khẩu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
         }
         
-    } else {
-        // ĐĂNG NHẬP THẤT BẠI
-        JOptionPane.showMessageDialog(this, "Tài khoản hoặc Mật khẩu không đúng.", "Lỗi Đăng nhập", JOptionPane.ERROR_MESSAGE);
-    }
+        TaiKhoanDAO tkDAO = new TaiKhoanDAO();
+        TaiKhoan user = tkDAO.checkLogin(tenDangNhap, matKhau); // Xác thực tài khoản
+
+        if (user != null) {
+            String role = user.getRole();
+            this.dispose(); // Đóng form đăng nhập sau khi thành công
+
+            // 1. Phân quyền cho Quản lý
+            if ("Quản lý".equals(role)) {
+                new ManagerForm(user).setVisible(true);            
+            } 
+            
+            // 2. Phân quyền cho Thu ngân
+            else if ("Thu ngân".equals(role)) {
+                CaLamViecDAO caDAO = new CaLamViecDAO();
+                int maNV = caDAO.getMaNVByMaTK(user.getMaTK()); // Tìm mã nhân viên
+                int maCaHienTai = caDAO.getMaCaHienTai(maNV); // Kiểm tra ca đang mở
+
+                if (maCaHienTai != -1) {
+                    // Nếu đã có ca đang mở, vào thẳng màn hình order
+                    new ThuNganForm(user).setVisible(true);
+                } else {
+                    // Nếu chưa có ca, yêu cầu mở ca qua Dialog
+                    new MoCaJDialog(null, true, user).setVisible(true);
+                }
+            } 
+            
+            // 3. Phân quyền cho Pha chế
+            else if (role.equalsIgnoreCase("Pha chế")) {
+                CaLamViecDAO caDAO = new CaLamViecDAO();
+                int maNV = caDAO.getMaNVByMaTK(user.getMaTK());
+                int maCaHienTai = caDAO.getMaCaHienTai(maNV);
+
+                if (maCaHienTai == -1) {
+                    // Tự động mở ca cho Pha chế với tiền đầu ca bằng 0
+                    CaLamViec caMoi = new CaLamViec(maNV, 0.0);
+                    caDAO.moCa(caMoi);
+                }
+                // Vào thẳng màn hình pha chế
+                new view.PhaCheForm(user).setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Vai trò không xác định.", "Lỗi Phân quyền", JOptionPane.WARNING_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Tài khoản hoặc Mật khẩu không đúng.", "Lỗi Đăng nhập", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnLoginActionPerformed
 
     /**

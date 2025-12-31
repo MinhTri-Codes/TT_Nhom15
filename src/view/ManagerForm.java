@@ -81,6 +81,11 @@ public class ManagerForm extends javax.swing.JFrame {
         });
 
         jButton6.setText("Thống kê ca làm");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -187,6 +192,12 @@ public class ManagerForm extends javax.swing.JFrame {
         ThongKeJPanel jpnv = new ThongKeJPanel();
         jpload.jPanelLoader(Jpanel_Load, jpnv);
     }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // TODO add your handling code here:
+        ThongKeCaLamJPanel jpnv = new ThongKeCaLamJPanel();
+        jpload.jPanelLoader(Jpanel_Load, jpnv);
+    }//GEN-LAST:event_jButton6ActionPerformed
 
     /**
      * @param args the command line arguments

@@ -19,17 +19,20 @@ private ThongKeDAO tkDAO = new ThongKeDAO();
      * Creates new form ThongKeJPanel
      */
     public ThongKeJPanel() {
-        initComponents();
+       initComponents();
         tableModel = (DefaultTableModel) tblThongKe.getModel();
         
-        // 1. Thiết lập ngày mặc định là ngày hôm nay
+        // 1. Thiết lập ngày mặc định
         jDateChooser_Start.setDate(new Date());
         jDateChooser_End.setDate(new Date());
         
-        // 2. Load dữ liệu lần đầu
+        // 2. Định dạng bảng
+        formatTable();
+        
+        // 3. Load dữ liệu lần đầu
         loadData();
         
-        // 3. Sự kiện: Khi người dùng thay đổi ngày, bảng tự cập nhật
+        // 4. Sự kiện thay đổi ngày
         jDateChooser_Start.addPropertyChangeListener(evt -> {
             if ("date".equals(evt.getPropertyName())) loadData();
         });
@@ -38,44 +41,64 @@ private ThongKeDAO tkDAO = new ThongKeDAO();
         });
     }
 private void loadData() {
-    // 1. Kiểm tra nếu chưa chọn ngày thì không thực hiện
-    if (jDateChooser_Start.getDate() == null || jDateChooser_End.getDate() == null) {
-        return;
+        if (jDateChooser_Start.getDate() == null || jDateChooser_End.getDate() == null) {
+            return;
+        }
+
+        SimpleDateFormat sdfSql = new SimpleDateFormat("yyyy-MM-dd");
+        String start = sdfSql.format(jDateChooser_Start.getDate());
+        String end = sdfSql.format(jDateChooser_End.getDate());
+
+        tableModel.setRowCount(0);
+
+        // Gọi phương thức mới từ DAO
+        List<Object[]> list = tkDAO.getDSHoaDonChiTiet(start, end); 
+        
+        int stt = 1;
+        double tongDoanhThu = 0;
+        SimpleDateFormat displayDate = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+        for (Object[] row : list) {
+            try {
+                double tienHD = row[2] != null ? ((Number) row[2]).doubleValue() : 0;
+                tongDoanhThu += tienHD;
+
+                tableModel.addRow(new Object[]{
+                    stt++,                                  // 0: STT
+                    "HD" + row[0],                          // 1: Mã HĐ
+                    displayDate.format((Date) row[1]),      // 2: Ngày lập
+                    String.format("%,.0f VNĐ", tienHD),     // 3: Tổng tiền
+                    row[3] != null ? "CA" + row[3] : "N/A", // 4: Mã ca
+                    row[4],                                 // 5: Mã NV
+                    row[5] != null ? row[5] : "Chưa xác định"// 6: Tên NV
+                });
+            } catch (Exception e) {
+                System.err.println("Lỗi dòng dữ liệu: " + e.getMessage());
+            }
+        }
+
+        jlbTongTien.setText("<html><b style='color:black;'>Tổng doanh thu hóa đơn: </b>"
+                + "<b style='color:red; font-size:16px;'>" + String.format("%,.0f VNĐ", tongDoanhThu) + "</b></html>");
     }
+private void formatTable() {
+        // Căn phải cho cột số tiền (Cột 3)
+        javax.swing.table.DefaultTableCellRenderer rightRenderer = new javax.swing.table.DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(javax.swing.JLabel.RIGHT);
+        tblThongKe.getColumnModel().getColumn(3).setCellRenderer(rightRenderer);
 
-    // 2. Định dạng ngày để gửi xuống SQL (yyyy-MM-dd)
-    SimpleDateFormat sdfSql = new SimpleDateFormat("yyyy-MM-dd");
-    String start = sdfSql.format(jDateChooser_Start.getDate());
-    String end = sdfSql.format(jDateChooser_End.getDate());
-
-    // 3. Làm sạch bảng trước khi nạp dữ liệu mới
-    tableModel.setRowCount(0);
-
-    // 4. Gọi DAO lấy danh sách hóa đơn
-    List<Object[]> list = tkDAO.getDSHoaDon(start, end);
-    
-    int stt = 1;
-    double tongDoanhThu = 0;
-    
-    // Định dạng hiển thị: Ngày (dd/MM/yyyy) và Tiền (có dấu phẩy)
-    SimpleDateFormat displayDate = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-
-    for (Object[] row : list) {
-        double soTien = (double) row[2]; // row[2] là TongTien từ DAO
-        tongDoanhThu += soTien;
-
-        tableModel.addRow(new Object[]{
-            stt++,                                  // Cột STT
-            "HD" + row[0],                          // Cột Mã HĐ (row[0] là MaHD)
-            displayDate.format((Date) row[1]),      // Cột Ngày lập (row[1] là NgayLap)
-            String.format("%,.0f VNĐ", soTien)      // Cột Tổng tiền
-        });
+        // Căn giữa cho các mã và STT
+        javax.swing.table.DefaultTableCellRenderer centerRenderer = new javax.swing.table.DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(javax.swing.JLabel.CENTER);
+        tblThongKe.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        tblThongKe.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        tblThongKe.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+        tblThongKe.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
+        
+        // Chỉnh độ rộng cột mẫu
+        tblThongKe.getColumnModel().getColumn(0).setPreferredWidth(40); // STT
+        tblThongKe.getColumnModel().getColumn(1).setPreferredWidth(70); // Mã HD
+        tblThongKe.getColumnModel().getColumn(6).setPreferredWidth(150); // Tên NV
     }
-
-    // 5. Hiển thị tổng tiền lên Label jlbTongTien
-    jlbTongTien.setText("<html><b style='color:black;'>Tổng doanh thu: </b>"
-            + "<b style='color:red; font-size:16px;'>" + String.format("%,.0f VNĐ", tongDoanhThu) + "</b></html>");
-}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -96,13 +119,13 @@ private void loadData() {
 
         tblThongKe.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null}
             },
             new String [] {
-                "STT", "Mã HĐ", "Ngày lập", "Tổng tiền"
+                "STT", "Mã HĐ", "Ngày lập", "Tổng tiền", "Mã ca", "Mã nhân viên", "Tên nhân viên"
             }
         ));
         tblThongKe.setToolTipText("");
@@ -133,10 +156,10 @@ private void loadData() {
                                 .addComponent(jDateChooser_End, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addComponent(jLabel1)
                             .addComponent(jLabel2))
-                        .addGap(0, 12, Short.MAX_VALUE))
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addComponent(jlbTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 375, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 996, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(

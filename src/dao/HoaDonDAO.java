@@ -143,22 +143,24 @@ public class HoaDonDAO {
     }
 
     // 5. Thanh toán
-   public void thanhToan(int maHD, double tongTien, String phuongThuc, double tienGiamGia) {
-        // Cập nhật: Tổng tiền, Trạng thái, Phương thức và Ngày giờ thanh toán (NOW)
-        String sql = "UPDATE hoadon SET TrangThai = 'Đã thanh toán', TongTien = ?, PhuongThuc = ?, Discount = ?, NgayLap = NOW() WHERE MaHD = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
-            ps.setDouble(1, tongTien);
-            ps.setString(2, phuongThuc); // Lưu 'Tiền mặt' hoặc 'Chuyển khoản'
-            ps.setDouble(3, tienGiamGia); 
-            ps.setInt(4, maHD);
-            
-            ps.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+   // Sửa lại phương thức thanhToan trong HoaDonDAO.java
+public boolean thanhToan(int maHD, double tongTien, String phuongThuc, double discount, int maNV, int maCa) {
+    // Thêm MaCa vào câu lệnh UPDATE
+    String sql = "UPDATE hoadon SET TrangThai = 'Đã thanh toán', NgayLap = NOW(), "
+               + "TongTien = ?, PhuongThuc = ?, Discount = ?, MaNV = ?, MaCa = ? "
+               + "WHERE MaHD = ?";
+    try (Connection conn = utils.DBConnection.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setDouble(1, tongTien);
+        pstmt.setString(2, phuongThuc);
+        pstmt.setDouble(3, discount);
+        pstmt.setInt(4, maNV);
+        pstmt.setInt(5, maCa); // Lưu MaCa vào hóa đơn
+        pstmt.setInt(6, maHD);
+        return pstmt.executeUpdate() > 0;
+    } catch (Exception e) {
+        e.printStackTrace();
+        return false;
     }
-    
+} 
 }

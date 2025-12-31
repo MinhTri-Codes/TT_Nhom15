@@ -24,6 +24,8 @@ public class ThuNganForm extends javax.swing.JFrame {
     int maBanDangChon = -1;
     double tienGiamGiaTamTinh = 0;
     DefaultTableModel modelOrder;
+    private TaiKhoan currentUser;
+private CaLamViecDAO caDAO = new CaLamViecDAO();
     /**
      * Creates new form ThuNganForm
      */
@@ -33,11 +35,12 @@ public class ThuNganForm extends javax.swing.JFrame {
     }
 
     public ThuNganForm(TaiKhoan user) {
-        initComponents();
-        initCustom();
-        if (user != null) {
-            this.setTitle("Thu Ngân: " + user.getTenDangNhap());
-        }
+       this.currentUser = user; // Lưu user lại để dùng khi đóng ca
+    initComponents();
+    initCustom();
+    if (user != null) {
+        this.setTitle("Thu Ngân: " + user.getTenDangNhap());
+    }
     }
 
     private void initCustom() {
@@ -262,51 +265,74 @@ public class ThuNganForm extends javax.swing.JFrame {
     }
 
     void xuLyThanhToan() {
-        if (maBanDangChon == -1) return;
-        int maHD = hdDAO.getMaHoaDonCho(maBanDangChon);
-        if (maHD == -1) return;
+    // 1. Kiểm tra bàn và hóa đơn chờ
+    if (maBanDangChon == -1) return;
+    int maHD = hdDAO.getMaHoaDonCho(maBanDangChon);
+    if (maHD == -1) return;
 
-        // Tính lại tổng gốc lần cuối cho chắc
-        double tongTienGoc = 0;
-        for (model.ChiTietHoaDon mon : currentList) {
-            tongTienGoc += mon.getThanhTien();
-        }
-        
-        if (tongTienGoc == 0) return;
-
-        
-        double khachCanTra = tongTienGoc - tienGiamGiaTamTinh;
-        
-        // Xác nhận thanh toán
-        Object[] options = {"Tiền mặt", "Chuyển khoản", "Hủy"};
-        String msg = "Tổng gốc: " + String.format("%,.0f", tongTienGoc) + 
-                     "\nĐã giảm: -" + String.format("%,.0f", tienGiamGiaTamTinh) +
-                     "\n--------------------------" +
-                     "\nKHÁCH CẦN TRẢ: " + String.format("%,.0f VNĐ", khachCanTra);
-
-        int choice = javax.swing.JOptionPane.showOptionDialog(this, msg, "Chốt đơn",
-                javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]);
-
-        String phuongThuc = "";
-        if (choice == 0) phuongThuc = "Tiền mặt";
-        else if (choice == 1) phuongThuc = "Chuyển khoản";
-        else return;
-
-        // Lưu vào DB
-        hdDAO.thanhToan(maHD, khachCanTra, phuongThuc, tienGiamGiaTamTinh);
-
-        // Reset mọi thứ
-        banDAO.updateTrangThai(maBanDangChon, "Trống");
-        tienGiamGiaTamTinh = 0; // <--- Quan trọng: Reset giảm giá sau khi thanh toán xong
-        loadDanhSachBan();
-        loadOrderCuaBan(maBanDangChon);
-        
-        javax.swing.JOptionPane.showMessageDialog(this, "Tiền đã về túi! (Thu: " + String.format("%,.0f", khachCanTra) + ")");
-        maBanDangChon = -1;
-        jLabel1.setText("Chưa chọn bàn");
-        lblTongTien.setText("Tổng: 0 VNĐ");
+    // 2. Tính toán tổng tiền thực tế từ danh sách món ăn
+    double tongTienGoc = 0;
+    for (model.ChiTietHoaDon mon : currentList) {
+        tongTienGoc += mon.getThanhTien();
     }
+    
+    if (tongTienGoc == 0) {
+        JOptionPane.showMessageDialog(this, "Bàn này chưa có món ăn!");
+        return;
+    }
+
+    double khachCanTra = tongTienGoc - tienGiamGiaTamTinh;
+    
+    // 3. Hiển thị hộp thoại lựa chọn phương thức thanh toán
+    Object[] options = {"Tiền mặt", "Chuyển khoản", "Hủy"};
+    String msg = "Tổng gốc: " + String.format("%,.0f", tongTienGoc) + 
+                 "\nĐã giảm: -" + String.format("%,.0f", tienGiamGiaTamTinh) +
+                 "\n--------------------------" +
+                 "\nKHÁCH CẦN TRẢ: " + String.format("%,.0f VNĐ", khachCanTra);
+
+    int choice = JOptionPane.showOptionDialog(this, msg, "Xác nhận thanh toán",
+            JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+            null, options, options[0]);
+
+    String phuongThuc = "";
+    if (choice == 0) phuongThuc = "Tiền mặt";
+    else if (choice == 1) phuongThuc = "Chuyển khoản";
+    else return; // Hủy thanh toán
+
+    try {
+        // 4. Lấy thông tin Ca làm việc và Nhân viên hiện tại
+        int maNV = caDAO.getMaNVByMaTK(currentUser.getMaTK());
+        int maCa = caDAO.getMaCaHienTai(maNV);
+
+        if (maCa == -1) {
+            JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy ca làm việc đang mở!");
+            return;
+        }
+
+        // 5. Gọi DAO thực hiện lưu hóa đơn
+        if (hdDAO.thanhToan(maHD, khachCanTra, phuongThuc, tienGiamGiaTamTinh, maNV, maCa)) {
+            
+            // 6. Cập nhật trạng thái bàn và reset giao diện
+            banDAO.updateTrangThai(maBanDangChon, "Trống");
+            tienGiamGiaTamTinh = 0; 
+            
+            loadDanhSachBan();
+            loadOrderCuaBan(maBanDangChon);
+            
+            JOptionPane.showMessageDialog(this, "Thanh toán thành công!");
+            
+            // Reset thông tin bàn đang chọn
+            maBanDangChon = -1;
+            jLabel1.setText("Chưa chọn bàn");
+            lblTongTien.setText("Tổng: 0 VNĐ");
+        } else {
+            JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật hóa đơn!");
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage());
+    }
+}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -330,6 +356,7 @@ public class ThuNganForm extends javax.swing.JFrame {
         btnSuaSL = new javax.swing.JButton();
         btnHuyDon = new javax.swing.JButton();
         btnGiamGia = new javax.swing.JButton();
+        btnDongCa = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -381,6 +408,14 @@ public class ThuNganForm extends javax.swing.JFrame {
             }
         });
 
+        btnDongCa.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
+        btnDongCa.setText("Đóng ca");
+        btnDongCa.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDongCaActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -391,55 +426,58 @@ public class ThuNganForm extends javax.swing.JFrame {
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1075, Short.MAX_VALUE)
                     .addComponent(jScrollPane2))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(78, 78, 78)
-                                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE))
+                                .addGap(12, 12, 12)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(btnSuaSL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(btnXoaMon, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                             .addGroup(layout.createSequentialGroup()
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(lblTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(74, 74, 74)
-                                .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 0, Short.MAX_VALUE)))
-                        .addContainerGap())
+                                .addComponent(lblTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(btnThanhToan, javax.swing.GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
+                            .addComponent(btnHuyDon, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(btnGiamGia, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addComponent(btnXoaMon)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnSuaSL, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(btnGiamGia, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnHuyDon)
-                        .addGap(25, 25, 25))))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 378, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btnDongCa)))))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addGap(15, 15, 15)
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel1)
+                            .addComponent(btnDongCa))
+                        .addGap(6, 6, 6)
                         .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 337, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnXoaMon)
-                            .addComponent(btnHuyDon)
-                            .addComponent(btnSuaSL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnGiamGia))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
-                        .addComponent(lblTongTien, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnXoaMon, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnThanhToan))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(btnSuaSL, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnHuyDon, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnThanhToan)
+                            .addComponent(lblTongTien, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 96, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)))
+                        .addComponent(jScrollPane3)))
                 .addContainerGap())
         );
 
@@ -495,6 +533,46 @@ public class ThuNganForm extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnGiamGiaActionPerformed
 
+    private void btnDongCaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDongCaActionPerformed
+        // TODO add your handling code here:
+        if (currentUser == null) return;
+
+    // 1. Tìm MaNV và MaCa đang mở
+    int maNV = caDAO.getMaNVByMaTK(currentUser.getMaTK());
+    int maCa = caDAO.getMaCaHienTai(maNV);
+
+    if (maCa == -1) {
+        JOptionPane.showMessageDialog(this, "Không tìm thấy ca làm việc đang mở!");
+        return;
+    }
+
+    // 2. Xác nhận đóng ca
+    int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn kết thúc ca làm việc?", "Xác nhận đóng ca", JOptionPane.YES_NO_OPTION);
+    if (confirm != JOptionPane.YES_OPTION) return;
+
+    // 3. Tính toán tiền mặt, chuyển khoản và doanh thu
+    double tienMat = caDAO.getTongTienTheoPhuongThuc(maCa, "Tiền mặt");
+    double tienCK = caDAO.getTongTienTheoPhuongThuc(maCa, "Chuyển khoản");
+    double doanhThu = tienMat + tienCK;
+
+    // 4. Lưu vào Database
+    if (caDAO.dongCa(maCa, tienMat, tienCK, doanhThu)) {
+        String thongBao = String.format("Kết ca thành công!\n"
+                + "--------------------------\n"
+                + "Tiền mặt: %,.0f VNĐ\n"
+                + "Chuyển khoản: %,.0f VNĐ\n"
+                + "Tổng doanh thu: %,.0f VNĐ", tienMat, tienCK, doanhThu);
+        
+        JOptionPane.showMessageDialog(this, thongBao, "Báo cáo kết ca", JOptionPane.INFORMATION_MESSAGE);
+        
+        // 5. Đóng form và quay lại màn hình đăng nhập
+        this.dispose();
+        new LoginFrom().setVisible(true);
+    } else {
+        JOptionPane.showMessageDialog(this, "Lỗi khi đóng ca!");
+    }
+    }//GEN-LAST:event_btnDongCaActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -531,6 +609,7 @@ public class ThuNganForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnDongCa;
     private javax.swing.JButton btnGiamGia;
     private javax.swing.JButton btnHuyDon;
     private javax.swing.JButton btnSuaSL;
