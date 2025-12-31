@@ -51,26 +51,29 @@ public class PhaCheForm extends javax.swing.JFrame {
         setLocationRelativeTo(null); // Canh giữa màn hình
     }
     void loadData() {
-        // Lưu vị trí dòng đang chọn để sau khi refresh không bị mất selection
-        int selectedRow = tblPhaChe.getSelectedRow();
-        
-        currentList = dao.getDanhSachMonCanLam();
-        model.setRowCount(0); // Xóa trắng bảng
-        
-        for (PhaCheDAO.MonCanLam mon : currentList) {
-            model.addRow(new Object[]{
-                mon.tenBan,
-                mon.tenSP,
-                mon.soLuong,
-                mon.trangThai
-            });
-        }
-        
-        // Restore lại selection nếu có
-        if (selectedRow >= 0 && selectedRow < model.getRowCount()) {
-            tblPhaChe.setRowSelectionInterval(selectedRow, selectedRow);
-        }
+    // 1. Lưu vị trí dòng đang chọn để tránh bị nhảy chuột khi refresh
+    int selectedRow = tblPhaChe.getSelectedRow();
+    
+    // 2. Lấy danh sách mới nhất từ DAO
+    currentList = dao.getDanhSachMonCanLam();
+    model.setRowCount(0); // Xóa trắng bảng cũ
+    
+    // 3. Đổ dữ liệu vào 5 cột
+    for (PhaCheDAO.MonCanLam mon : currentList) {
+        model.addRow(new Object[]{
+            mon.tenBan,         // Cột 0: BÀN SỐ
+            mon.tenSP,          // Cột 1: TÊN MÓN
+            mon.soLuong,        // Cột 2: SỐ LƯỢNG
+            mon.trangThai,      // Cột 3: TRẠNG THÁI
+            "HD" + mon.maHD     // Cột 4: MÃ ĐƠN (Thêm tiền tố HD để nhìn chuyên nghiệp hơn)
+        });
     }
+    
+    // 4. Khôi phục lại dòng đã chọn (nếu có)
+    if (selectedRow >= 0 && selectedRow < model.getRowCount()) {
+        tblPhaChe.setRowSelectionInterval(selectedRow, selectedRow);
+    }
+}
     void initEvents() {
         // --- NÚT NHẬN ĐƠN (Chuyển sang "Đang làm") ---
         btnNhanDon.addActionListener(e -> {
@@ -132,16 +135,19 @@ public class PhaCheForm extends javax.swing.JFrame {
 
         tblPhaChe.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
             },
             new String [] {
-                "BÀN SỐ:", "TÊN MÓN:", "SỐ LƯỢNG:", "TRẠNG THÁI:"
+                "BÀN SỐ", "TÊN MÓN", "SỐ LƯỢNG", "TRẠNG THÁI", "MÃ ĐƠN"
             }
         ));
         jScrollPane1.setViewportView(tblPhaChe);
+        if (tblPhaChe.getColumnModel().getColumnCount() > 0) {
+            tblPhaChe.getColumnModel().getColumn(0).setResizable(false);
+        }
 
         btnXong.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
         btnXong.setText("Hoàn tất");
