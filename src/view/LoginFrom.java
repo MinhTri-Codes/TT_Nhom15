@@ -108,6 +108,11 @@ public class LoginFrom extends javax.swing.JFrame {
         btnExit.setBackground(new java.awt.Color(255, 102, 102));
         btnExit.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
         btnExit.setText("Exit");
+        btnExit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnExitActionPerformed(evt);
+            }
+        });
 
         txtMatKhau.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
 
@@ -231,6 +236,21 @@ String tenDangNhap = txtTaiKhoan.getText();
             JOptionPane.showMessageDialog(this, "Tài khoản hoặc Mật khẩu không đúng.", "Lỗi Đăng nhập", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btnLoginActionPerformed
+
+    private void btnExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExitActionPerformed
+        // TODO add your handling code here:
+        int confirm = JOptionPane.showConfirmDialog(
+        this, 
+        "Bạn có chắc chắn muốn thoát ứng dụng không?", 
+        "Xác nhận thoát", 
+        JOptionPane.YES_NO_OPTION, 
+        JOptionPane.QUESTION_MESSAGE
+    );
+    
+    if (confirm == JOptionPane.YES_OPTION) {
+        System.exit(0);
+    }
+    }//GEN-LAST:event_btnExitActionPerformed
 
     /**
      * @param args the command line arguments
